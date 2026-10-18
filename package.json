@@ -11,7 +11,9 @@
     "lint:fix": "eslint . --fix",
     "worker": "node src/lib/graphile/worker.js",
     "migrate": "kysely migrate:latest",
-    "feed": "python3 src/tasks/feeds.py"
+    "feed": "python3 src/tasks/feeds.py",
+    "examples": "node src/tasks/generateExamples.js",
+    "push-collection": "node src/tasks/pushCollection.js"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",

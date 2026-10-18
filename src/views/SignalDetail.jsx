@@ -147,7 +147,7 @@ export default function SignalDetail() {
 
 function GeneratePanel({ signal, onQueued }) {
   const [tab, setTab] = useState("find");
-  const [medium, setMedium] = useState(signal.medium);
+  const [mediums, setMediums] = useState([signal.medium]);
   const [windowId, setWindowId] = useState(signal.criteria?.window || "30d");
   const [candidates, setCandidates] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -174,13 +174,28 @@ function GeneratePanel({ signal, onQueued }) {
     }
   }
 
+  function toggleMedium(id) {
+    setMediums((current) => {
+      if (current.includes(id)) {
+        return current.length === 1 ? current : current.filter((item) => item !== id);
+      }
+      return [...current, id];
+    });
+  }
+
   async function queue(formData, key) {
     setBusyKey(key);
     setMessage({ tone: "", text: "" });
-    formData.append("medium", medium);
+    const formats = mediums.length ? mediums : [signal.medium];
     try {
-      await signalAPI.generate(signal.slug, formData);
-      setMessage({ tone: "ok", text: `Queued a ${mediumLabel(medium).toLowerCase()}. It will appear below when it is ready (usually a few minutes).` });
+      for (const medium of formats) {
+        const copy = new FormData();
+        for (const [name, value] of formData.entries()) copy.append(name, value);
+        copy.append("medium", medium);
+        await signalAPI.generate(signal.slug, copy);
+      }
+      const labels = formats.map((id) => mediumLabel(id).toLowerCase()).join(", ");
+      setMessage({ tone: "ok", text: `Queued ${labels}. Items appear below when ready (usually a few minutes).` });
       await onQueued();
       return true;
     } catch (err) {
@@ -233,18 +248,25 @@ function GeneratePanel({ signal, onQueued }) {
           <p className="font-mono text-[11px] tracking-[0.4em] uppercase text-cobalt">Convert a paper</p>
           <p className="font-body text-sm text-graphite/50 mt-1">Convert one paper and add it to this collection.</p>
         </div>
-        <label className="flex items-center gap-3">
-          <span className="font-mono text-[10px] tracking-widest uppercase text-graphite/40">Format</span>
-          <select
-            value={medium}
-            onChange={(e) => setMedium(e.target.value)}
-            className="font-mono text-xs uppercase tracking-widest bg-transparent border-b border-graphite/15 py-2 outline-none"
-          >
-            {MEDIUMS.map((m) => (
-              <option key={m.id} value={m.id}>{m.action}</option>
-            ))}
-          </select>
-        </label>
+        <div className="flex flex-wrap gap-2">
+          {MEDIUMS.map((m) => {
+            const on = mediums.includes(m.id);
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => toggleMedium(m.id)}
+                aria-pressed={on}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest ${
+                  on ? "border-cobalt bg-cobalt text-white" : "border-graphite/15 text-graphite/50 hover:border-cobalt"
+                }`}
+              >
+                <MediumIcon medium={m.id} className="w-3.5 h-3.5" />
+                {m.action}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex gap-6 border-b border-graphite/10" role="tablist">
@@ -328,7 +350,7 @@ function GeneratePanel({ signal, onQueued }) {
                     className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest bg-cobalt text-white px-4 py-2 rounded-full hover:bg-cobalt/90 disabled:opacity-50"
                   >
                     {busyKey === candidate.pmid && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    {mediumAction(medium)}
+                    {mediums.length > 1 ? `Generate ${mediums.length} formats` : mediumAction(mediums[0])}
                   </button>
                   <a href={candidate.pubmed_url} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] uppercase tracking-widest text-graphite/45 hover:text-cobalt">
                     PubMed
@@ -367,7 +389,7 @@ function GeneratePanel({ signal, onQueued }) {
             className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest bg-cobalt text-white px-5 py-2.5 rounded-full hover:bg-cobalt/90 disabled:opacity-50"
           >
             {busyKey === "upload" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            {mediumAction(medium)} from PDF
+            {mediums.length > 1 ? `Generate ${mediums.length} formats from PDF` : `${mediumAction(mediums[0])} from PDF`}
           </button>
         </form>
       )}

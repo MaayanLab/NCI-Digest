@@ -24,7 +24,7 @@ from pydub import AudioSegment
 from .audioGenerator import generate_audio, synthesize
 from .generatePodcast import _mp3_remote, _public_url, _rclone
 from .paperFinder import curate_outputs
-from .reusableOutputs import extract_pdf_text
+from .reusableOutputs import extract_pdf_text, merge_outputs
 
 dotenv.load_dotenv()
 
@@ -381,7 +381,7 @@ def generate_item(
     _progress("curating data/code outputs")
     paper = {
         **paper,
-        "outputs": curate_outputs(paper, extra_text=extracted),
+        "outputs": merge_outputs(paper.get("outputs"), curate_outputs(paper, extra_text=extracted)),
     }
     _progress(f"outputs={len(paper.get('outputs') or [])}")
 

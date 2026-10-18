@@ -6,7 +6,7 @@ import { DEFAULT_CRITERIA, MEDIUM_IDS, WINDOW_IDS } from "../signalOptions.js"
 
 export const DEFAULT_MODEL = process.env.SIGNAL_DEFAULT_MODEL || "gpt-5.5-2026-04-23"
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
-const RESERVED_SLUGS = new Set(["new", "options", "nci-signal", "flagship", "admin", "api"])
+const RESERVED_SLUGS = new Set(["new", "options", "stats", "nci-signal", "flagship", "admin", "api"])
 
 export function allowedModels() {
   const extra = (process.env.SIGNAL_MODELS || "")
@@ -268,7 +268,50 @@ export async function usedPmids(signalId) {
     .where("pmid", "!=", "")
     .where("status", "!=", "failed")
     .execute()
-  return rows.map((r) => r.pmid)
+  return [...new Set(rows.map((r) => r.pmid))]
+}
+
+export async function usedPmidMediums(signalId) {
+  const rows = await db
+    .selectFrom("app.signal_items")
+    .select(["pmid", "medium"])
+    .where("signal_id", "=", signalId)
+    .where("pmid", "is not", null)
+    .where("pmid", "!=", "")
+    .where("status", "!=", "failed")
+    .execute()
+  return new Set(rows.map((row) => `${row.pmid}:${row.medium}`))
+}
+
+export async function platformStats({ bumpViews = false } = {}) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS app.site_metrics (
+      key text PRIMARY KEY,
+      value bigint NOT NULL DEFAULT 0
+    )
+  `.execute(db)
+  await sql`
+    INSERT INTO app.site_metrics (key, value)
+    VALUES ('views', 0)
+    ON CONFLICT (key) DO NOTHING
+  `.execute(db)
+
+  const viewsResult = bumpViews
+    ? await sql`UPDATE app.site_metrics SET value = value + 1 WHERE key = 'views' RETURNING value`.execute(db)
+    : await sql`SELECT value FROM app.site_metrics WHERE key = 'views'`.execute(db)
+
+  const [collections, papers, users] = await Promise.all([
+    db.selectFrom("app.signals").select((eb) => eb.fn.countAll().as("n")).executeTakeFirst(),
+    db.selectFrom("app.signal_items").select((eb) => eb.fn.countAll().as("n")).executeTakeFirst(),
+    db.selectFrom("app.users").select((eb) => eb.fn.countAll().as("n")).executeTakeFirst(),
+  ])
+
+  return {
+    collections: Number(collections?.n || 0) + 1,
+    papers: Number(papers?.n || 0),
+    views: Number(viewsResult.rows?.[0]?.value || 0),
+    users: Number(users?.n || 0),
+  }
 }
 
 export async function itemsCreatedToday(ownerId) {

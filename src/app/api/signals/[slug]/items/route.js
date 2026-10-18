@@ -1,6 +1,6 @@
 import { db } from "@/lib/database/index.js"
 import { getCurrentUser } from "@/lib/auth/session.js"
-import { dailyLimit, getSignal, itemsCreatedToday, listItems, serializeItem, usedPmids } from "@/lib/signals/store.js"
+import { dailyLimit, getSignal, itemsCreatedToday, listItems, serializeItem, usedPmidMediums } from "@/lib/signals/store.js"
 import { MEDIUM_IDS } from "@/lib/signalOptions.js"
 import { queue_generate_signal_item } from "@/tasks/generateSignalItem.js"
 
@@ -101,8 +101,8 @@ export async function POST(request, { params }) {
     return Response.json({ error: "Upload a PDF or pick a paper with an abstract" }, { status: 400 })
   }
 
-  if (paper.pmid && (await usedPmids(row.id)).includes(paper.pmid)) {
-    return Response.json({ error: "This collection already has that paper" }, { status: 409 })
+  if (paper.pmid && (await usedPmidMediums(row.id)).has(`${paper.pmid}:${medium}`)) {
+    return Response.json({ error: "This collection already has that paper in this format" }, { status: 409 })
   }
 
   try {
