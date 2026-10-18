@@ -96,3 +96,18 @@
     background-color: #F7F9FC;
   }
 }
+
+@keyframes cell-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-4deg); }
+  50% { transform: translate3d(3%, -4%, 0) rotate(5deg); }
+}
+
+@keyframes cell-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(8deg) scale(1); }
+  50% { transform: translate3d(3%, 3%, 0) rotate(-4deg) scale(1.04); }
+}
+
+@keyframes cell-drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-8deg); }
+  50% { transform: translate3d(4%, 2%, 0) rotate(3deg); }
+}

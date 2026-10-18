@@ -25,6 +25,7 @@ function json(method, body) {
 export const signalAPI = {
   options: () => request("/api/signals/options"),
   listPublic: () => request("/api/signals"),
+  stats: (countView) => request(`/api/signals/stats${countView ? "?view=1" : ""}`),
   listMine: () => request("/api/signals?mine=1"),
   get: (slug) => request(`/api/signals/${encodeURIComponent(slug)}`),
   create: (body) => request("/api/signals", json("POST", body)),

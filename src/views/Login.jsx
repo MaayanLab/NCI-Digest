@@ -50,7 +50,7 @@ export default function Login() {
     <AuthLayout
       icon={Radio}
       title="Sign in to NCI Digest"
-      subtitle="Start a collection, convert papers into podcasts, talks, slides, or videos, and share them."
+      subtitle="Upload a paper, pick a format, then add it to a collection you can share."
       footer={<Link to="/" className="hover:text-foreground">← Back to community collections</Link>}
     >
       <div className="space-y-6">

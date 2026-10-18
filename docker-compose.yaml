@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.app
-    image: danielzhu04/nci-signal-app:0.1.5
+    image: danielzhu04/nci-signal-app:0.1.9
     platform: linux/amd64
     pull_policy: if_not_present
     ports:
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    image: danielzhu04/nci-signal-worker:0.1.5
+    image: danielzhu04/nci-signal-worker:0.1.9
     platform: linux/amd64
     pull_policy: if_not_present
     environment:

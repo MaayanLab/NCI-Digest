@@ -9,8 +9,8 @@
 ![Python](https://img.shields.io/badge/Python-3-3776ab?style=flat-square&logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ed?style=flat-square&logo=docker&logoColor=white)
 
-**Live prototype:** <https://nci-signal.k8s.maayanlab.cloud/>
-**Flagship collection:** [NCI Signal](https://nci-signal.k8s.maayanlab.cloud/nci-signal), a weekly AI podcast on the NCI-supported paper that drew the most PubMed attention.
+**Live prototype:** <https://nci-digest.k8s.maayanlab.cloud/>
+**Flagship collection:** [NCI Signal](https://nci-digest.k8s.maayanlab.cloud/nci-signal), a weekly AI podcast on the NCI-supported paper that drew the most PubMed attention.
 
 ### Why NCI Digest?
 
@@ -216,6 +216,23 @@ Generation runs in the worker, so both processes must be running.
 ```bash
 docker compose up -d --build
 ```
+
+### Deploy to the lab cluster (`nci-digest.k8s.maayanlab.cloud`)
+
+The public hostname is `PROD_NEXT_PUBLIC_URL`. Compose maps that onto the cluster ingress (`maayanlab.cloud/ingress`) and `APP_URL`. Keep the Kubernetes app name `nci-signal` so this is an in-place update (same Postgres volume), not a second stack.
+
+1. In `.env`, set:
+   ```bash
+   PROD_NEXT_PUBLIC_URL=https://nci-digest.k8s.maayanlab.cloud
+   APP_URL=https://nci-digest.k8s.maayanlab.cloud
+   ```
+2. In Google Cloud Console → OAuth client, add  
+   `https://nci-digest.k8s.maayanlab.cloud/api/auth/google/callback`  
+   as an authorized redirect URI (and the matching origin). You can remove the old `nci-signal` URI after cutover.
+3. Rebuild and apply the same way you last deployed this compose file to `danielzhu04@sshkube` (namespace `danielzhu04`). The ingress annotation will move the site to the new host; `*.k8s.maayanlab.cloud` TLS is issued automatically.
+4. Confirm <https://nci-digest.k8s.maayanlab.cloud/>. After the ingress updates, <https://nci-signal.k8s.maayanlab.cloud/> should stop serving this app. Do **not** rename the compose `x-kubernetes.name` unless you also delete the old `nci-signal` resources — renaming creates a second deployment and leaves the old host up.
+
+Flagship pages stay at `/nci-signal` on the new domain (that path is the collection slug, not the hostname). S3 (`S3_PREFIX=nci-signal`) can stay as-is; it is object storage, not the public site URL.
 
 ### Environment reference
 
